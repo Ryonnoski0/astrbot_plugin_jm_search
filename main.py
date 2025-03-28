@@ -10,7 +10,7 @@ import astrbot.api.message_components as Comp
 
 def all2PDF(input_folder, pdfpath, pdfname, event=None):
     start_time = time.time()
-    paht = input_folder
+    path = input_folder
     zimulu = []  # 子目录（里面为image）
     image = []  # 子目录图集
     sources = []  # pdf格式的图
@@ -19,7 +19,7 @@ def all2PDF(input_folder, pdfpath, pdfname, event=None):
         chain = [Comp.At(qq=event.get_sender_id()), Comp.Plain("开始整理图片文件...")]
         yield event.chain_result(chain)
 
-    with os.scandir(paht) as entries:
+    with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_dir():
                 zimulu.append(int(entry.name))
@@ -27,12 +27,12 @@ def all2PDF(input_folder, pdfpath, pdfname, event=None):
     zimulu.sort()
 
     for i in zimulu:
-        with os.scandir(paht + "/" + str(i)) as entries:
+        with os.scandir(path + "/" + str(i)) as entries:
             for entry in entries:
                 if entry.is_dir():
-                    print("这一级不应该有自录")
+                    print("这一级不应该有子目录")
                 if entry.is_file():
-                    image.append(paht + "/" + str(i) + "/" + entry.name)
+                    image.append(path + "/" + str(i) + "/" + entry.name)
 
     if event:
         chain = [
@@ -53,8 +53,8 @@ def all2PDF(input_folder, pdfpath, pdfname, event=None):
                 img_file = img_file.convert("RGB")
             sources.append(img_file)
 
-            # 每处理20%的图片报告一次进度
-            if event and idx % max(1, total_images // 5) == 0:
+            # 每处理50%的图片报告一次进度
+            if event and idx % max(1, total_images // 2) == 0:
                 progress_percent = (idx / total_images) * 100
                 chain = [
                     Comp.At(qq=event.get_sender_id()),
@@ -69,7 +69,7 @@ def all2PDF(input_folder, pdfpath, pdfname, event=None):
         yield event.chain_result(chain)
 
     pdf_file_path = pdfpath + "/" + pdfname
-    if pdf_file_path.endswith(".pdf") == False:
+    if not pdf_file_path.endswith(".pdf"):
         pdf_file_path = pdf_file_path + ".pdf"
     output.save(pdf_file_path, "pdf", save_all=True, append_images=sources)
     end_time = time.time()
@@ -150,8 +150,8 @@ class MyPlugin(Star):
             yield event.chain_result(chain)
 
             # 下载漫画
-            jmcomic.download_album(id, loadConfig)
-
+            album, _ = jmcomic.download_album(id, loadConfig)
+            # print(benzi.file_name)
             # 下载完成通知
             download_time = time.time() - download_start_time
             chain = [
@@ -166,42 +166,61 @@ class MyPlugin(Star):
                 path = data["dir_rule"]["base_dir"]
 
             # 查找刚下载的漫画目录并转换为PDF
-            latest_entry = None
-            with os.scandir(path) as entries:
-                for entry in entries:
-                    if entry.is_dir():
-                        # 检查是否已经有对应的PDF
-                        if os.path.exists(os.path.join(path, entry.name + ".pdf")):
-                            latest_entry = entry
-                            continue
-                        else:
-                            latest_entry = entry
-                            # 使用生成器函数转换PDF并报告进度
-                            pdf_generator = all2PDF(
-                                path + "/" + entry.name, path, entry.name, event
-                            )
-                            for result in pdf_generator:
-                                yield result
-
-            if latest_entry:
-                # 转换完成，发送文件
-                pdf_path = os.path.abspath(path + "/" + latest_entry.name + ".pdf")
+            pdf_filename = album.name + ".pdf"
+            pdf_path = os.path.abspath(path + "/" + pdf_filename)
+            pdf_file_path = "file://" + pdf_path
+            # 首先检查是否已经存在对应的PDF文件
+            if os.path.exists(pdf_path):
+                print(f"PDF文件已存在，无需重新生成。{pdf_path}")
+                # PDF已找到，准备发送文件
                 chain = [
                     Comp.At(qq=event.get_sender_id()),
-                    Comp.Plain("来看这个文件："),
                     Comp.File(
-                        file=pdf_path,
-                        name=latest_entry.name + ".pdf",
+                        file=pdf_file_path,
+                        name=pdf_filename,
                     ),
-                    Comp.Plain("这是一个pdf。"),
                 ]
                 yield event.chain_result(chain)
             else:
-                chain = [
-                    Comp.At(qq=event.get_sender_id()),
-                    Comp.Plain("未找到需要转换的漫画目录。"),
-                ]
-                yield event.chain_result(chain)
+                # 没找到PDF，寻找对应的目录来转换
+                target_dir = None
+                with os.scandir(path) as entries:
+                    for entry in entries:
+                        if entry.is_dir() and entry.name == album.name:
+                            target_dir = entry
+                            break
+
+                if target_dir:
+                    # 找到了目录，开始转换
+                    pdf_generator = all2PDF(
+                        path + "/" + target_dir.name, path, album.name, event
+                    )
+                    for result in pdf_generator:
+                        yield result
+
+                    # 转换完成后，检查PDF是否成功生成
+                    print(f"PDF文件路径: {pdf_path}")
+                    if os.path.exists(pdf_path):
+                        chain = [
+                            Comp.At(qq=event.get_sender_id()),
+                            Comp.File(
+                                file=pdf_file_path,
+                                name=pdf_filename,
+                            ),
+                        ]
+                        yield event.chain_result(chain)
+                    else:
+                        chain = [
+                            Comp.At(qq=event.get_sender_id()),
+                            Comp.Plain("PDF转换似乎失败了，未找到生成的PDF文件。"),
+                        ]
+                        yield event.chain_result(chain)
+                else:
+                    chain = [
+                        Comp.At(qq=event.get_sender_id()),
+                        Comp.Plain("未找到需要转换的漫画目录。"),
+                    ]
+                    yield event.chain_result(chain)
 
         except Exception as e:
             chain = [

@@ -12,6 +12,7 @@ client:
   postman:
     meta_data:
       proxies: 127.0.0.1:7890
+      # 注意这个如果在doker或者本地代理服务器无法访问上请设置内外ip
 
 download:
   cache: true # 如果要下载的文件在磁盘上已存在，不用再下一遍了吧？
