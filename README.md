@@ -1,6 +1,7 @@
 # jm_search
 
 > 基于 [AstrBot](https://github.com/astral-sh/AstrBot)与 [jmcomic](https://github.com/hect0x7/JMComic-Crawler-Python/tree/master) 的 jm 搜索插件。
+支持win/linux系统
 
 ## 转 pdf 代码来自以下项目
 
