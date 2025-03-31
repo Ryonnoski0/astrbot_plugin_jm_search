@@ -43,7 +43,7 @@
 <a href="https://github.com/Ryonnoski0/astrbot_plugin_md5">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski0&repo=astrbot_plugin_md5&theme=radical" />
-    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski&repo=astrbot_plugin_md5" />
-    <img alt="Repo Card" src="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski&repo=astrbot_plugin_md5" />
+    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski0&repo=astrbot_plugin_md5" />
+    <img alt="Repo Card" src="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski0&repo=astrbot_plugin_md5" />
   </picture>
 </a>
