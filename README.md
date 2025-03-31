@@ -1,7 +1,6 @@
 # jm_search
 
-> 基于 [AstrBot](https://github.com/astral-sh/AstrBot)与 [jmcomic](https://github.com/hect0x7/JMComic-Crawler-Python/tree/master) 的 jm 搜索插件。
-支持win/linux系统
+> 基于 [AstrBot](https://github.com/astral-sh/AstrBot)与 [jmcomic](https://github.com/hect0x7/JMComic-Crawler-Python/tree/master) 的 jm 搜索插件。支持 win/linux 系统
 
 ## 转 pdf 代码来自以下项目
 
@@ -33,16 +32,18 @@
   </picture>
 </a>
 
-# 声明  
+# 更新
 
-本插件仅用于学习和技术研究目的，不得用于任何商业用途或违反法律法规的活动。  
+### v0.2
 
-使用本插件下载的内容可能包含成人内容，用户应当遵守所在地区的法律法规，不得在禁止使用此类内容的地区使用本插件。  
+添加默认 pdf 文件采用 id md5 加密，默认 pdf 密码为 md5(id) 可以配合我的另一个插件使用
 
-用户需自行承担使用本插件的全部法律责任。插件作者和贡献者对用户使用本插件产生的任何后果不承担任何责任。  
+#### jm_md5
 
-本插件不存储、不提供任何漫画内容，仅作为技术工具连接用户与公开的第三方网站。  
-
-如果您使用了本插件，即表示您已阅读并同意此免责声明的全部内容。如果您不同意本声明的任何内容，请立即停止使用本插件。  
-
-请尊重原创作品版权，支持正版内容。  
+<a href="https://github.com/Ryonnoski0/astrbot_plugin_md5">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski0&repo=astrbot_plugin_md5&theme=radical" />
+    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski&repo=astrbot_plugin_md5" />
+    <img alt="Repo Card" src="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski&repo=astrbot_plugin_md5" />
+  </picture>
+</a>

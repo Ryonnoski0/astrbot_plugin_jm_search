@@ -1,6 +1,6 @@
 name: jm_search # 这是你的插件的唯一识别名。
-desc: 搜索禁漫。支持win和linux系统 # 插件简短描述
+desc: 搜索禁漫。支持win和linux系统，默认采用md5加密pdf，请配合另一个插件使用https://github.com/Ryonnoski0/astrbot_plugin_md5 # 插件简短描述
 help: 输入 /jmhelp 查看关键词回复帮助。 # 插件的帮助信息
-version: v0.1 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v0.2 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: Ryonnoski # 作者
 repo: https://github.com/Ryonnoski0/astrbot_plugin_jm_search # 插件的仓库地址

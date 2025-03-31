@@ -6,18 +6,20 @@ import jmcomic, yaml, os, time
 import requests
 import json
 import astrbot.api.message_components as Comp
+import hashlib  # 导入 hashlib 模块用于计算 MD5
 
 
-def all2PDF(input_folder, pdfpath, pdfname, event=None):
+# 不加密的使用方式（与原来相同）
+def all2PDF(input_folder, pdfpath, pdfname, event=None, password=None):
     start_time = time.time()
     path = input_folder
     zimulu = []  # 子目录（里面为image）
     image = []  # 子目录图集
     sources = []  # pdf格式的图
 
-    if event:
-        chain = [Comp.At(qq=event.get_sender_id()), Comp.Plain("开始整理图片文件...")]
-        yield event.chain_result(chain)
+    # if event:
+    #     chain = [Comp.At(qq=event.get_sender_id()), Comp.Plain("开始整理图片文件...")]
+    #     yield event.chain_result(chain)
 
     with os.scandir(path) as entries:
         for entry in entries:
@@ -34,12 +36,12 @@ def all2PDF(input_folder, pdfpath, pdfname, event=None):
                 if entry.is_file():
                     image.append(path + "/" + str(i) + "/" + entry.name)
 
-    if event:
-        chain = [
-            Comp.At(qq=event.get_sender_id()),
-            Comp.Plain(f"已找到 {len(image)} 张图片，开始转换为PDF..."),
-        ]
-        yield event.chain_result(chain)
+    # if event:
+    #     chain = [
+    #         Comp.At(qq=event.get_sender_id()),
+    #         Comp.Plain(f"已找到 {len(image)} 张图片，开始转换为PDF..."),
+    #     ]
+    #     yield event.chain_result(chain)
 
     if "jpg" in image[0]:
         output = Image.open(image[0])
@@ -53,33 +55,92 @@ def all2PDF(input_folder, pdfpath, pdfname, event=None):
                 img_file = img_file.convert("RGB")
             sources.append(img_file)
 
-            # 每处理50%的图片报告一次进度
-            if event and idx % max(1, total_images // 2) == 0:
-                progress_percent = (idx / total_images) * 100
-                chain = [
-                    Comp.At(qq=event.get_sender_id()),
-                    Comp.Plain(
-                        f"PDF转换进度: {progress_percent:.1f}% ({idx}/{total_images})"
-                    ),
-                ]
-                yield event.chain_result(chain)
+            # # 每处理50%的图片报告一次进度
+            # if (
+            #     event and idx > 0 and idx % max(1, total_images // 2) == 0
+            # ):  # 添加 idx > 0 条件
+            #     progress_percent = (idx / total_images) * 100
+            #     chain = [
+            #         Comp.At(qq=event.get_sender_id()),
+            #         Comp.Plain(
+            #             f"PDF转换进度: {progress_percent:.1f}% ({idx}/{total_images})"
+            #         ),
+            #     ]
+            #     yield event.chain_result(chain)
 
     if event:
-        chain = [Comp.At(qq=event.get_sender_id()), Comp.Plain("正在保存PDF文件...")]
+        chain = [
+            Comp.At(qq=event.get_sender_id()),
+            Comp.Plain("正在保存PDF并尝试加密..."),
+        ]
         yield event.chain_result(chain)
 
+    # 创建临时PDF文件路径
+    temp_pdf_path = pdfpath + "/temp_" + pdfname
+    if not temp_pdf_path.endswith(".pdf"):
+        temp_pdf_path = temp_pdf_path + ".pdf"
+
+    # 最终PDF文件路径
     pdf_file_path = pdfpath + "/" + pdfname
     if not pdf_file_path.endswith(".pdf"):
         pdf_file_path = pdf_file_path + ".pdf"
-    output.save(pdf_file_path, "pdf", save_all=True, append_images=sources)
+
+    # 先保存为未加密的PDF
+    output.save(temp_pdf_path, "pdf", save_all=True, append_images=sources)
+
+    # 如果提供了密码，则添加密码保护
+    if password:
+        # if event:
+        #     chain = [
+        #         Comp.At(qq=event.get_sender_id()),
+        #         Comp.Plain("正在为PDF添加密码保护..."),
+        #     ]
+        #     yield event.chain_result(chain)
+
+        try:
+            from PyPDF2 import PdfReader, PdfWriter
+
+            reader = PdfReader(temp_pdf_path)
+            writer = PdfWriter()
+
+            # 复制所有页面到新的PDF
+            for page in reader.pages:
+                writer.add_page(page)
+
+            # 添加密码保护
+            writer.encrypt(password)
+
+            # 保存加密后的PDF
+            with open(pdf_file_path, "wb") as f:
+                writer.write(f)
+
+            # 删除临时文件
+            os.remove(temp_pdf_path)
+
+        except ImportError:
+            if event:
+                chain = [
+                    Comp.At(qq=event.get_sender_id()),
+                    Comp.Plain(
+                        "警告：未安装PyPDF2库，无法添加密码保护。请使用pip install PyPDF2安装。"
+                    ),
+                ]
+                yield event.chain_result(chain)
+            # 如果没有PyPDF2，就直接使用未加密的文件
+            os.rename(temp_pdf_path, pdf_file_path)
+    else:
+        # 如果没有提供密码，直接重命名临时文件
+        os.rename(temp_pdf_path, pdf_file_path)
+
     end_time = time.time()
     run_time = end_time - start_time
     print("运行时间：%3.2f 秒" % run_time)
 
     if event:
+        protection_msg = "（已加密保护）" if password else ""
         chain = [
             Comp.At(qq=event.get_sender_id()),
-            Comp.Plain(f"PDF生成完成！用时 {run_time:.2f} 秒"),
+            Comp.Plain(f"PDF生成完成！{protection_msg}用时 {run_time:.2f} 秒"),
         ]
         yield event.chain_result(chain)
 
@@ -107,7 +168,7 @@ class MyPlugin(Star):
 
         chain = [
             Comp.At(qq=event.get_sender_id()),
-            Comp.Plain(f"开始下载ID为 {id} 的禁漫，请稍候..."),
+            Comp.Plain(f"开始下载ID为 {id} 的禁漫 并尝试转为pdf，请稍候..."),
         ]
         yield event.chain_result(chain)
 
@@ -143,22 +204,22 @@ class MyPlugin(Star):
             last_report_time = 0
 
             # 在下载前发送通知
-            chain = [
-                Comp.At(qq=event.get_sender_id()),
-                Comp.Plain(f"开始下载ID: {id}..."),
-            ]
-            yield event.chain_result(chain)
+            # chain = [
+            #     Comp.At(qq=event.get_sender_id()),
+            #     Comp.Plain(f"开始下载ID: {id}..."),
+            # ]
+            # yield event.chain_result(chain)
 
             # 下载漫画
             album, _ = jmcomic.download_album(id, loadConfig)
             # print(benzi.file_name)
             # 下载完成通知
-            download_time = time.time() - download_start_time
-            chain = [
-                Comp.At(qq=event.get_sender_id()),
-                Comp.Plain(f"下载完成！用时 {download_time:.2f} 秒。开始生成PDF..."),
-            ]
-            yield event.chain_result(chain)
+            # download_time = time.time() - download_start_time
+            # chain = [
+            #     Comp.At(qq=event.get_sender_id()),
+            #     Comp.Plain(f"下载完成！用时 {download_time:.2f} 秒。开始生成PDF..."),
+            # ]
+            # yield event.chain_result(chain)
 
             # 加载配置路径
             with open(config, "r", encoding="utf8") as f:
@@ -191,9 +252,10 @@ class MyPlugin(Star):
                             break
 
                 if target_dir:
+                    md5_hash = hashlib.md5(str(id).encode()).hexdigest()
                     # 找到了目录，开始转换
                     pdf_generator = all2PDF(
-                        path + "/" + target_dir.name, path, album.name, event
+                        path + "/" + target_dir.name, path, album.name, event, md5_hash
                     )
                     for result in pdf_generator:
                         yield result
