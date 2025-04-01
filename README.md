@@ -34,6 +34,11 @@
 
 # 更新
 
+### v0.3
+
+自带解密，命令/md5 [需要解密的字符串]
+可以舍去上面的jm_md5了
+
 ### v0.2
 
 添加默认 pdf 文件采用 id md5 加密，默认 pdf 密码为 md5(id) 可以配合我的另一个插件使用
@@ -47,3 +52,4 @@
     <img alt="Repo Card" src="https://github-readme-stats.vercel.app/api/pin/?username=Ryonnoski0&repo=astrbot_plugin_md5" />
   </picture>
 </a>
+
