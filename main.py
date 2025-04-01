@@ -8,8 +8,6 @@ import json
 import astrbot.api.message_components as Comp
 import hashlib  # 导入 hashlib 模块用于计算 MD5
 
-
-# 不加密的使用方式（与原来相同）
 def all2PDF(input_folder, pdfpath, pdfname, event=None, password=None):
     start_time = time.time()
     path = input_folder
@@ -294,4 +292,11 @@ class MyPlugin(Star):
     @filter.command("jmhelp")
     async def jmhelp(self, event: AstrMessageEvent):
         """使用/jmhelp 可以查看帮助"""  # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
-        yield event.plain_result("输入/jm id 可以搜索禁漫")
+        yield event.plain_result(
+            "输入/jm id 可以搜索禁漫,默认pdf会加密，加密密码为md5加密后的id。输入/jm md5 [需要md5加密的字符串]可以md5加密字符串，此字符串是密码"
+        )
+
+    @filter.command("md5")
+    async def md5(self, event: AstrMessageEvent, string: str):
+        """使用/md5 [需要md5加密的字符串]可以md5加密字符串，用于解密pdf文件密码，默认密码为md5加密后的id"""
+        yield event.plain_result(hashlib.md5(str(string).encode()).hexdigest())
