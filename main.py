@@ -7,6 +7,9 @@ import requests
 import json
 import astrbot.api.message_components as Comp
 import hashlib  # 导入 hashlib 模块用于计算 MD5
+def fix_win_filename(s: str) -> str:
+    """清洗Windows非法字符（替换为_）"""
+    return ''.join(['_' if c in '\\/:*?"<>|\n\t\r' else c for c in s])
 
 def all2PDF(input_folder, pdfpath, pdfname, event=None, password=None):
     start_time = time.time()
@@ -210,6 +213,7 @@ class MyPlugin(Star):
 
             # 下载漫画
             album, _ = jmcomic.download_album(id, loadConfig)
+            album_name = fix_win_filename(album.name)
             # print(benzi.file_name)
             # 下载完成通知
             # download_time = time.time() - download_start_time
@@ -225,7 +229,7 @@ class MyPlugin(Star):
                 path = data["dir_rule"]["base_dir"]
 
             # 查找刚下载的漫画目录并转换为PDF
-            pdf_filename = album.name + ".pdf"
+            pdf_filename = album_name + ".pdf"
             pdf_path = os.path.abspath(path + "/" + pdf_filename)
             pdf_file_path = "file://" + pdf_path
             # 首先检查是否已经存在对应的PDF文件
@@ -245,7 +249,7 @@ class MyPlugin(Star):
                 target_dir = None
                 with os.scandir(path) as entries:
                     for entry in entries:
-                        if entry.is_dir() and entry.name == album.name:
+                        if entry.is_dir() and entry.name == album_name:
                             target_dir = entry
                             break
 
@@ -253,7 +257,7 @@ class MyPlugin(Star):
                     md5_hash = hashlib.md5(str(id).encode()).hexdigest()
                     # 找到了目录，开始转换
                     pdf_generator = all2PDF(
-                        path + "/" + target_dir.name, path, album.name, event, md5_hash
+                        path + "/" + target_dir.name, path, album_name, event, md5_hash
                     )
                     for result in pdf_generator:
                         yield result
